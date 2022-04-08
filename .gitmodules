@@ -4,3 +4,6 @@
 [submodule "lvgl"]
 	path = lvgl
 	url = https://github.com/lvgl/lvgl.git
+[submodule "ui"]
+	path = ui
+	url = https://peterson79@bitbucket.org/startechnologies/winsim.git
