@@ -9,7 +9,7 @@
  *********************/
 #define _DEFAULT_SOURCE /* needed for usleep() */
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #define SDL_MAIN_HANDLED /*To fix SDL's "undefined reference to WinMain" issue*/
 #include <SDL2/SDL.h>
 #include "lvgl/lvgl.h"
@@ -19,6 +19,7 @@
 #include "lv_drivers/indev/mouse.h"
 #include "lv_drivers/indev/keyboard.h"
 #include "lv_drivers/indev/mousewheel.h"
+#include "my_gui.h"
 
 /*********************
  *      DEFINES

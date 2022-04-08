@@ -5,10 +5,18 @@
 #
 PROJECT 			?= lvgl-sdl
 MAKEFLAGS 			:= -j $(shell nproc)
+
 SRC_EXT      		:= c
+PAWN_SRC_EXT      	:= p
+
 OBJ_EXT				:= o
+PAWN_OBJ_EXT		:= amx
+
 all: CC 			:= gcc
+all: PAWN_CC 		:= pawncc
+
 win64: CC 			:= x86_64-w64-mingw32-gcc.exe
+win64: PAWN_CC		:= pawncc.exe
 
 
 
@@ -27,23 +35,34 @@ WARNINGS 			:= -Wall -Wextra \
             			-Wtype-limits -Wsizeof-pointer-memaccess -Wpointer-arith
 
 CFLAGS 				:= -O0 -g $(WARNINGS)
+
+# add /V for overlays...
+PAWN_FLAGS 			:= /d1 /O0 /r /S128 /v 
+
 all: LDFLAGS 		:= 
 win64: LDFLAGS 		:= -L./ui/simulator/dlls
 
 # Add simulator define to allow modification of source
-all: DEFINES				:= -D SIMULATOR=1 -D LV_BUILD_TEST=0 -D LV_CONF_INCLUDE_SIMPLE=1 -D LV_USE_DEMO_WIDGETS=1
-win64: DEFINES				:= -D SIMULATOR=1 -D LV_BUILD_TEST=0 -D LV_CONF_INCLUDE_SIMPLE=1 -D __WIN64__ -D LV_PRId32=PRId32 -D LV_PRIu32=PRIu32 -D LV_USE_DEMO_WIDGETS=1
+all: DEFINES		:= -D SIMULATOR=1 -D LV_BUILD_TEST=0 -D LV_CONF_INCLUDE_SIMPLE=1 -D LV_USE_DEMO_WIDGETS=0
+win64: DEFINES		:= -D SIMULATOR=1 -D LV_BUILD_TEST=0 -D LV_CONF_INCLUDE_SIMPLE=1 -D __WIN64__ -D LV_PRId32=PRId32 -D LV_PRIu32=PRIu32 -D LV_USE_DEMO_WIDGETS=0 -D HAVE_ALLOCA_H=0 -D __MSDOS__=1
+
+PAWN_DEFINES		:= AMX_DONT_RELOCATE=1 USE_HELO=1 
 
 # Include simulator inc folder first so lv_conf.h from custom UI can be used instead
 INC 				:= -I./ui/simulator/inc/ -I./ -I./lvgl/
-LDLIBS	 			:= -lSDL2 -lm
+PAWN_INC			:= /i./ui/simulator/apps/include
+all: LDLIBS	 		:= -lSDL2 -lm -lwinmm
+win64: LDLIBS	 	:= -lSDL2 -lm -lwinmm
 BIN 				:= $(BIN_DIR)/demo
 
 COMPILE				= $(CC) $(CFLAGS) $(INC) $(DEFINES)
+PAWN_COMPILE		= $(PAWN_CC) $(PAWN_FLAGS) $(PAWN_INC) $(PAWN_DEFINES)
 
 # Automatically include all source files
 SRCS 				:= $(shell find $(SRC_DIR) -type f -name '*.c' -not -path '*/\.*')
+PAWN_SRCS			:= $(shell find $(SRC_DIR) -type f -name '*.p' -not -path '*/\.*')
 OBJECTS    			:= $(patsubst $(SRC_DIR)%,$(BUILD_DIR)/%,$(SRCS:.$(SRC_EXT)=.$(OBJ_EXT)))
+PAWN_OBJECTS    	:= $(patsubst $(SRC_DIR)%,$(BUILD_DIR)/%,$(PAWN_SRCS:.$(PAWN_SRC_EXT)=.$(PAWN_OBJ_EXT)))
 
 all: default
 
@@ -52,7 +71,13 @@ $(BUILD_DIR)/%.$(OBJ_EXT): $(SRC_DIR)/%.$(SRC_EXT)
 	@mkdir -p $(dir $@)
 	@$(COMPILE) -c -o "$@" "$<"
 
-default: $(OBJECTS)
+$(BUILD_DIR)/%.$(PAWN_OBJ_EXT): $(SRC_DIR)/%.$(PAWN_SRC_EXT)
+	@echo 'Building pawn file: $<'
+	@echo $(PAWN_COMPILE) /o./"$@" ./"$<"
+	@mkdir -p $(dir $@)
+	@$(PAWN_COMPILE) /o./"$@" ./"$<"
+
+default: $(OBJECTS) $(PAWN_OBJECTS)
 	@mkdir -p $(BIN_DIR)
 	$(CC) -o $(BIN) $(OBJECTS) $(LDFLAGS) ${LDLIBS}
 
@@ -63,6 +88,6 @@ install: ${BIN}
 	install -d ${DESTDIR}/usr/lib/${PROJECT}/bin
 	install $< ${DESTDIR}/usr/lib/${PROJECT}/bin/
 
-win64: $(OBJECTS)
+win64: $(OBJECTS) $(PAWN_OBJECTS)
 	@mkdir -p $(BIN_DIR)
 	$(CC) -o $(BIN) $(OBJECTS) $(LDFLAGS) ${LDLIBS}
