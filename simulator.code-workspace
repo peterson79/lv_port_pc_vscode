@@ -7,7 +7,10 @@
 	"settings": {
 		"files.associations": {
 			"cstdio": "cpp",
-			"cstdarg": "cpp"
+			"cstdarg": "cpp",
+			"mouse.h": "c",
+			"lv_demo_widgets.h": "c",
+			"lv_demos.h": "c"
 		},
 		"search.exclude": {
 			"**/.*": true,
